@@ -19,3 +19,9 @@ CABIN_CLASSES = {
     "BUSINESS,FIRST": "Business / First",
     "FIRST": "First",
 }
+CABIN_CLASS_MAPPING = {
+    "Main Cabin": "economy",
+    "Premium Economy": "premium_economy",
+    "Business / First": "business,first",
+    "First": "first",
+}

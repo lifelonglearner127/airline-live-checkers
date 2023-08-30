@@ -1,7 +1,11 @@
 import requests
 from live_checkers.exceptions import ScrapingException
 from live_checkers.enums import Airline
-from live_checkers.aa.constants import GET_FLIGHT_POINTS_HEADDER, CABIN_CLASSES
+from live_checkers.aa.constants import (
+    GET_FLIGHT_POINTS_HEADDER,
+    CABIN_CLASSES,
+    CABIN_CLASS_MAPPING,
+)
 
 
 def get_flight_points(
@@ -80,7 +84,11 @@ def get_flight_points(
                 if flight_number == flight_no:
                     for cabin_price in s.get("pricingDetail", []):
                         product_type = cabin_price.get("productType", "")
-                        if CABIN_CLASSES.get(product_type) == cabin_class:
+                        airline_cabin_class = CABIN_CLASSES.get(product_type)
+                        if (
+                            CABIN_CLASS_MAPPING.get(airline_cabin_class, "")
+                            == cabin_class
+                        ):
                             return cabin_price.get("perPassengerAwardPoints", -1)
         else:
             return -1
