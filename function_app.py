@@ -18,14 +18,14 @@ def live_checker(req: func.HttpRequest) -> func.HttpResponse:
         destination = payload["destination"]
         departure_date = payload["departure_date"]
         departure_time = payload.get("departure_time")
-        flight_no = payload["flight_no"]
-        cabin_class = payload["cabin_class"]
+        flight_no = payload.get("flight_no")
+        cabin_class = payload.get("cabin_class")
         if airline.lower() == Airline.AmericanAirlines:
             response = get_flight_points(
                 origin=origin,
                 destination=destination,
-                departure_date=departure_date,
-                departure_time=departure_time,
+                flight_date=departure_date,
+                flight_time=departure_time,
                 flight_no=flight_no,
                 cabin_class=cabin_class,
             )
