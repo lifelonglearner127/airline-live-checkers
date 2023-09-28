@@ -15,8 +15,10 @@ from live_checkers.aa.constants import (
 class FlightPointInfo:
     origin: str
     destination: str
-    duration: float
-    stops: float
+    cabin_class: str
+    airline_cabin_class: str
+    duration: int
+    stops: int
     departure_date: str
     departure_time: str
     departure_timezone: str
@@ -24,13 +26,10 @@ class FlightPointInfo:
     arrival_time: str
     arrival_timezone: str
     points: float
-    date: str
-    airline_cabin_class: str
-    cabin_class: str
+    cash_fee: Optional[float] = 0
     stop_cities: List[str] = field(default_factory=list)
     carriers: List[str] = field(default_factory=list)
     segments: List[dict] = field(default_factory=list)
-    cash_fee: Optional[float] = 0
 
 
 @dataclass(frozen=True)
@@ -199,7 +198,6 @@ def get_flight_points(
 
                 segments.append(segment)
             base_record["segments"] = segments
-            base_record["date"] = flight_date
 
             for cabin_price in slice.get("pricingDetail", []):
                 record_item = base_record.copy()
