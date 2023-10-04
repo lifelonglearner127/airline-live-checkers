@@ -12,6 +12,21 @@ from live_checkers.aa.constants import (
 
 
 @dataclass(frozen=True)
+class FlightSegment:
+    origin: str
+    destination: str
+    departure_date: str
+    departure_time: str
+    departure_timezone: str
+    arrival_date: str
+    arrival_time: str
+    arrival_timezone: str
+    flight_number: str
+    aircraft: str
+    amenities: List[str] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class FlightPointInfo:
     origin: str
     destination: str
@@ -29,7 +44,7 @@ class FlightPointInfo:
     cash_fee: Optional[float] = 0
     stop_cities: List[str] = field(default_factory=list)
     carriers: List[str] = field(default_factory=list)
-    segments: List[dict] = field(default_factory=list)
+    segments: List[FlightSegment] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -135,31 +150,31 @@ def get_flight_points(
 
         slices = data.get("slices", [])
         for slice in slices:
-            base_record = dict()
-            base_record["origin"] = slice.get("origin", {}).get("code", "")
-            base_record["destination"] = slice.get("destination", {}).get("code", "")
-            base_record["duration"] = slice.get("durationInMinutes", 0)
-            base_record["stops"] = slice.get("stops", 0)
+            flight = {}
+            flight["origin"] = slice.get("origin", {}).get("code", "")
+            flight["destination"] = slice.get("destination", {}).get("code", "")
+            flight["duration"] = slice.get("durationInMinutes", 0)
+            flight["stops"] = slice.get("stops", 0)
             departure_date_time = slice.get("departureDateTime", "")
             if departure_date_time:
                 parsed_datetime = parse_datetime(departure_date_time)
-                base_record["departure_date"] = parsed_datetime.date
-                base_record["departure_time"] = parsed_datetime.time
-                base_record["departure_timezone"] = parsed_datetime.timezone
+                flight["departure_date"] = parsed_datetime.date
+                flight["departure_time"] = parsed_datetime.time
+                flight["departure_timezone"] = parsed_datetime.timezone
             arrival_date_time = slice.get("arrivalDateTime", "")
             if arrival_date_time:
                 parsed_datetime = parse_datetime(arrival_date_time)
-                base_record["arrival_date"] = parsed_datetime.date
-                base_record["arrival_time"] = parsed_datetime.time
-                base_record["arrival_timezone"] = parsed_datetime.timezone
+                flight["arrival_date"] = parsed_datetime.date
+                flight["arrival_time"] = parsed_datetime.time
+                flight["arrival_timezone"] = parsed_datetime.timezone
             connecting_cities = slice.get("connectingCities", [])
             if connecting_cities:
-                base_record["stop_cities"] = [
+                flight["stop_cities"] = [
                     connectingCity.get("code", "")
                     for connectingCity in connecting_cities[0]
                     if connectingCity.get("code", "")
                 ]
-            base_record["carriers"] = slice.get("carrierNames", [])
+            flight["carriers"] = slice.get("carrierNames", [])
             segments = []
             for slice_segment in slice.get("segments", []):
                 segment = dict()
@@ -197,25 +212,27 @@ def get_flight_points(
                     segment["amenities"] = segment_leg.get("amenities", [])
 
                 segments.append(segment)
-            base_record["segments"] = segments
+            flight["segments"] = segments
 
             for cabin_price in slice.get("pricingDetail", []):
-                record_item = base_record.copy()
                 product_type = cabin_price.get("productType", "")
-                record_item["airline_cabin_class"] = CABIN_CLASSES.get(
+                flight["airline_cabin_class"] = CABIN_CLASSES.get(
                     product_type, product_type
                 )
-                record_item["cabin_class"] = CABIN_CLASS_MAPPING.get(
-                    record_item["airline_cabin_class"], ""
+                flight["cabin_class"] = CABIN_CLASS_MAPPING.get(
+                    flight["airline_cabin_class"], ""
                 )
-                record_item["points"] = cabin_price.get("perPassengerAwardPoints", -1)
-                if not record_item["points"]:
-                    record_item["points"] = -1
-                record_item["cash_fee"] = cabin_price.get(
+                if flight["cabin_class"].lower() != cabin_class.lower():
+                    continue
+
+                flight["points"] = cabin_price.get("perPassengerAwardPoints", -1)
+                if not flight["points"]:
+                    flight["points"] = -1
+                flight["cash_fee"] = cabin_price.get(
                     "perPassengerTaxesAndFees", {}
                 ).get("amount", 0)
 
-                points.append(FlightPointInfo(**record_item))
+                points.append(FlightPointInfo(**flight))
 
         return [asdict(point) for point in points]
     except (ScrapingException, Exception) as e:
